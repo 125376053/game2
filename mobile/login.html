@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+    <meta content="yes" name="apple-mobile-web-app-capable">
+    <meta content="black" name="apple-mobile-web-app-status-bar-style">
+    <meta content="telephone=no" name="format-detection">
+    <title>BABA</title>
+    <script>
+        (function(win,doc){
+            function change(){
+                doc.documentElement.style.fontSize=doc.documentElement.clientWidth/375*100+'px';
+            }
+            change();
+            win.addEventListener('resize',change,false);
+        })(window,document);
+    </script>
+    <link rel="stylesheet" type="text/css" href="css/all.css">
+</head>
+<body>
+    <div class="page" v-cloak>
+        <div class="content">
+            <img class="logo" src="./images/logo.jpg" alt="">
+            <div class="form">
+                <p>
+                    <input v-model="phone" type="text" placeholder="手机">
+                </p>
+                <p>
+                    <input v-model="password" type="password" placeholder="密码">
+                </p>
+                <a href="javascript:;" @click="login" class="a1 loginBtn">登录</a>
+                <a href="./register.html" class="a2 registerBtn">注册</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+<script src="js/jquery-1.10.1.min.js"></script>
+<script src="js/main.js"></script>
+<script src="js/vue.js"></script>
+<script>
+    var index=new Vue({
+        el:'.page',
+        data:{
+            userInfor:userInfor, //是否登录
+            password: '',
+            phone: getCookie('shoujihao') || '',
+        },
+        mounted(){
+
+        },
+        methods:{
+            login(){
+                setCookie('shoujihao', this.phone || '', 7);//设置手机号cookie 7天
+                var telMoshi = /^1[23456789]\d{9}$/; //手机号验证
+                var passMoshi = /^[0-9a-zA-Z]{6,20}$/g; //密码验证
+                if (this.phone == "" && !telMoshi.test(this.phone)) {
+                    $.Prompt('请输入正确的手机号码');
+                    return false;
+                } else if (this.password == '') {
+                    $.Prompt('密码不能为空');
+                    return false;
+                } else if (!passMoshi.test(this.password)) {
+                    $.Prompt('密码由6-12位数字，大小写字母组成');
+                    return false;
+                } else {
+                    this.loginFn()
+                }
+            },
+            loginFn(){
+                var that = this;
+                var obj = {
+                    account: this.phone,
+                    pwd: this.password
+                }
+                $.ajax({
+                    url: api + '/baba/act/login',
+                    type: 'post',
+                    beforeSend: function () {
+                        loading.show()
+                    },
+                    contentType: "application/json",
+                    dataType: "json",
+                    data: JSON.stringify(obj),
+                    success: function (res) {
+                        loading.hide()
+                        console.log(res)
+                        if (res.code == 'LPB0001') {
+                            $.Prompt('登录成功');
+                            window.location.href="index.html"
+                            //缓存本地信息
+                            var userInfor=JSON.stringify(res.data);
+                            console.log(userInfor)
+                            window.localStorage.setItem('userInfor',userInfor)
+                        } else {
+                            $.Prompt(res.message);
+                        }
+                    },
+                    error: function () {
+                        loading.hide()
+                    }
+                })
+            }
+        }
+    })
+</script>

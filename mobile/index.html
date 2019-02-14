@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+    <meta content="yes" name="apple-mobile-web-app-capable">
+    <meta content="black" name="apple-mobile-web-app-status-bar-style">
+    <meta content="telephone=no" name="format-detection">
+    <title>BABA</title>
+    <script>
+        (function(win,doc){
+            function change(){
+                doc.documentElement.style.fontSize=doc.documentElement.clientWidth/375*100+'px';
+            }
+            change();
+            win.addEventListener('resize',change,false);
+        })(window,document);
+    </script>
+    <link rel="stylesheet" type="text/css" href="css/all.css">
+</head>
+<body>
+    <div class="page" v-cloak>
+        <div class="content">
+            <div class="header">
+                <div class="box">
+                    {{box.unlockTime}}
+                </div>
+            </div>
+            <div class="index_c">
+                <h3>{{box.createUser}}的任务</h3>
+                <p class="infor">她看起来很高兴，因为你的加入使得破解宝箱的时间减少了。</p>
+                <div class="canyu">
+                    <div>
+                        <img src="./images/yaoshi2.jpg" alt="">
+                        <span>{{box.praiseCount}}</span>
+                    </div>
+                    <p v-if="box.status">你已参与</p>
+                    <p style="color:#000;" v-if="!box.status" @click="getData">参与破解</p>
+                </div>
+                <div class="get">
+                    <p class="bgcolor"></p>
+                    <p class="p1">{{box.boxName}}</p>
+                    <p class="p2">可能获得</p>
+                    <div v-for="(item,index) in box.goods">
+                        <p>{{item}}</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <a class="footer" href="register.html" style="color:#fff;">我也要捡宝箱</a>
+    </div>
+</body>
+</html>
+<script src="js/jquery-1.10.1.min.js"></script>
+<script src="js/main.js"></script>
+<script src="js/vue.js"></script>
+<script>
+    var pickId=getSearchString('id')||1
+    var index=new Vue({
+        el:'.page',
+        data:{
+            userInfor:userInfor, //是否登录
+            box:{}
+        },
+        mounted(){
+            this.getBox()
+        },
+        methods:{
+            // 点赞
+            getData(){
+                var that=this;
+                $.ajax({
+                    url: api + '/baba/box/praiseBox',
+                    type: 'get',
+                    beforeSend: function () {
+                        loading.show()
+                    },
+                    data:{
+                        pickId:pickId
+                    },
+                    success: function (res) {
+                        loading.hide()
+                        if (res.code == 'LPB0001') {
+                            console.log(res)
+                            that.getBox()
+                        } else {
+                            $.Prompt(res.message);
+                        }
+                    },
+                    error: function () {
+                        loading.hide()
+                    }
+                })
+            },
+
+            // 获取用户捡到的箱子详情
+            getBox(){
+                var that=this;
+                $.ajax({
+                    url: api + '/baba/box/getPickBoxDetailById',
+                    type: 'get',
+                    beforeSend: function () {
+                        loading.show()
+                    },
+                    data:{
+                       boxId:pickId
+                    },
+                    success: function (res) {
+                        loading.hide()
+                        if (res.code == 'LPB0001') {
+                            console.log(res)
+                            that.box=res.data
+                        } else {
+                            $.Prompt(res.message);
+                        }
+                    },
+                    error: function () {
+                        loading.hide()
+                    }
+                })
+            }
+        }
+    })
+</script>

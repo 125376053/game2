@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>列表</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <link rel="icon" href="images/favicon.ico">
+    <script src="js/limit.js"></script>
+    <link rel="stylesheet" href="css/polyfill.object-fit.min.css">
+    <link rel="stylesheet" href="css/all.css">
+</head>
+<body>
+
+<div class="shopIndex" v-cloak>
+
+    <head-top-nav
+            @search="searchcb"
+            :global-nav="true"
+            :is-box="isBox"
+            :touxiang="touxiang"
+            :is-full="isFull"
+    ></head-top-nav>
+
+    <div class="list_index">
+        <!--列表-->
+        <ul class="list" v-if="list.length>0" :style="{'min-height':minHeight}">
+            <li v-for="(item,index) in list" @mouseover="goumaiIndex=index">
+                <img class="fm" :src="item.packageUrl" alt="">
+                <div class="list_infor">
+                    <p class="title">{{item.goodName}}</p>
+                    <div style="overflow:hidden; margin-top: 10px;">
+                        <p class="dikou_jinbi">
+                            <img src="./images/add1.png" alt="" width="" height="12">
+                            <span>{{item.goldPrice}}</span>
+                        </p>
+                        <p class="dikou_jian">
+                            <span>最多使用</span>
+                            <img src="./images/add2.png" alt="" width="" height="12">
+                            <span>{{item.silverPrice}}抵扣</span>
+                        </p>
+                    </div>
+                    <!--取出百位：parseInt(num/100)取出十位：parseInt((num%100)/10)取出个位：parseInt(num%10)-->
+                    <div class="moshi" style="display: none;">
+                        <p>
+                            <a :class="{cur:parseInt((item.goodType%100)/10)==1}" href="javascript:;">中文</a>
+                            <a :class="{cur:parseInt((item.goodType%100)/10)==2}" href="javascript:;">英文</a>
+                            <a :class="{cur:parseInt(item.goodType%10)==1}" href="javascript:;">单人</a>
+                        </p>
+                        <p>
+                            <a :class="{cur:parseInt(item.goodType%10)==2}" href="javascript:;">本地多人</a>
+                            <a :class="{cur:parseInt(item.goodType%10)==3}" href="javascript:;">在线多人</a>
+                        </p>
+                    </div>
+                    <a v-if="goumaiIndex==index" href="javascript:;" class="registerBtn goumai" @click="goumaiFn">
+                        购买
+                    </a>
+                </div>
+            </li>
+        </ul>
+
+        <div class="content_index" v-if="list.length==0">
+            <div class="content_infor">
+                <div class="content">
+                    <div class="step2" v-if="index1==2">
+                        <p class="title">感谢有你</p>
+                        <p class="chaxun">感谢你为大家做出的贡献</p>
+                    </div>
+                    <div class="step3" v-if="index1==3">
+                        <p class="title">还行，竟然没搜着</p>
+                        <p class="chaxun">请提供这款游戏的steam链接，以加快<br>收录便于尽早为大家争取福利吧。</p>
+                        <p class="linkurl">
+                            <input type="text" v-model="linkUrl" placeholder="steam链接地址">
+                            <a href="javascript:;" @click="sendShouLu">提交</a>
+                        </p>
+                    </div>
+                    <a class="goShop" href="./list.html">随便逛逛>></a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!--确认购买-->
+    <div class="dialog" v-if="dialog2">
+        <div class="dialog_content">
+            <img class="left" :src="list[goumaiIndex].packageUrl" alt="">
+            <div class="right">
+                <p class="title">{{list[goumaiIndex].goodName}}</p>
+
+                <!--用户余额-->
+                <div class="myPay">
+                    <img class="touxiang2" :src="userInfor.avatar||touxiang" alt="">
+                    <div class="infor_xiang2">
+                        <div class="lx">
+                            <b>特权</b>
+                            <p>
+                                <img src="./images/zanshi.png" alt="" width="12" height="12">
+                                <span>{{userInfor?isTequan:0}}</span>
+                            </p>
+                        </div>
+                        <div class="lx">
+                            <b>金币</b>
+                            <p>
+                                <img src="./images/add1.png" alt="" width="" height="12">
+                                <span>{{userInfor?userjin:0}}</span>
+                            </p>
+                        </div>
+                        <div class="lx">
+                            <b>银币</b>
+                            <p>
+                                <img src="./images/add2.png" alt="" width="" height="12">
+                                <span>{{userInfor?useryin:0}}</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="goumaiInfor">
+                    <div class="top">
+                        <span>我的收获信息</span>
+                        <a href="javascript:;" @click="saveInfor">保存</a>
+                    </div>
+                    <div class="shuru">
+                        <div class="oneone">
+                            <input v-model="name" type="text" placeholder="姓名">
+                            <input v-model="tel" type="tel" placeholder="电话">
+                        </div>
+                        <div class="twotwo">
+                            <input v-model="adress" type="text" placeholder="地址">
+                        </div>
+                    </div>
+                </div>
+
+                <!--购买-->
+                <div class="first" v-if="step2==1">
+                    <div class="num">
+                        <div class="p1">
+                            <div>
+                                <img src="./images/add1.png" alt="" width="" height="12">
+                                <span class="span2">{{list[goumaiIndex].goldPrice}}</span>
+                            </div>
+                        </div>
+                        <div class="p2">
+                            <span>最多使用</span>
+                            <p>
+                                <img src="./images/add2.png" alt="" width="" height="12">
+                                <span class="span2">{{list[goumaiIndex].silverPrice}}</span>
+                            </p>
+                            <span>抵扣</span>
+                        </div>
+                    </div>
+
+                    <div class="tishi">
+                        <span>抵扣</span>
+                        <b>只需支付{{list[goumaiIndex].goldPrice-zhekou}}元</b>
+                        <!--平台金币 免单特权 支付宝-->
+                        <i>请选择</i>
+                    </div>
+
+                    <div class="fangshi">
+                        <a href="javascript:;">
+                            <div>
+                                <img src="./images/add2.png" alt="">
+                                <input type="number" v-model="zhekou" @input="validata" @focus="zhekou=''"
+                                       @blur="blurFn" :placeholder="list[goumaiIndex].silverPrice">
+                            </div>
+                        </a>
+                        <a v-if="isTequan" href="###" :class="{border:fangshi==1}" @click="fangshiClick(1)">
+                            <img src="./images/zanshi.png" alt="">
+                        </a>
+                        <!--无特权-->
+                        <a v-if="!isTequan" href="javascript:;">
+                            <img src="./images/zanshi2.png" alt="">
+                        </a>
+                        <!--金币-->
+                        <a href="javascript:;" :class="{border:fangshi==1}" @click="fangshiClick(1)">
+                            <img src="./images/add1.png" alt="">
+                        </a>
+                        <a href="javascript:;" :class="{border:fangshi==3}" @click="fangshiClick(3)">
+                            <img src="./images/aliicon.png" alt="">
+                        </a>
+                    </div>
+
+                    <p class="jinbiBuzu" v-if="tishiFlag">
+                        你的游戏基金不足，
+                        <a href="###" @click="showZhiHuan">充值</a>或
+                        <a :href="api+'/baba/view/index'">参与活动</a>即可获得
+                    </p>
+                    <a
+                            v-if="fangshi==1 || fangshi==2"
+                            @click="enterGoumai"
+                            href="javascript:;"
+                            class="registerBtn goumai2"
+                    >
+                        确认购买
+                    </a>
+                    <img v-if="fangshi==3" :src="erweima2" alt=""
+                         style="width: 120px;height: 120px;margin-top: 20px; padding-left: 67px;">
+                </div>
+
+                <!--购买成功-->
+                <div class="goumaiSuccess" v-if="step2==3" style="padding-left: 37px;">
+                    <p class="p1">购买成功</p>
+                    <p class="p2">你可以进入个人中心
+                        <img src="./images/left_jt2.png" alt="">
+                        <a href="libao.html" style="color:lightskyblue!important;">我的礼包</a>
+                        查看礼包详情并兑换至steam账户
+                    </p>
+                </div>
+
+                <!--购买失败-->
+                <div class="goumaiSuccess" v-if="step2==2" style="padding-left: 37px;">
+                    <p class="p1">购买失败</p>
+                    <p class="p2">请检查您的余额是否充足，或
+                        <a
+                                @click="window.location.reload()"
+                                href="javascript:;"
+                                style="color:#2699fb!important;">刷新
+                        </a>
+                        页面重试。
+                    </p>
+                </div>
+
+            </div>
+            <a class="closed2" href="javascript:;" @click="dialog2=false">
+                <img src="./images/closed2.png" alt="">
+            </a>
+        </div>
+    </div>
+
+    <!--置换金币-->
+    <zhi-huan :touxiang="touxiang"></zhi-huan>
+
+</div>
+
+</body>
+</html>
+<script src="js/jquery-1.10.1.min.js"></script>
+<script src="js/main.js"></script>
+<script src="js/vue.js"></script>
+<script src="components/headTopNav.js"></script>
+<script src="components/zhiHuan.js"></script>
+<script src="js/polyfill.object-fit.min.js"></script>
+<script>
+    var index = new Vue({
+        el: '.shopIndex',
+        data: {
+            api: api,
+            touxiang: api + '/static/images/renxing.png',
+            userInfor: userInfor, //是否登录
+            list: [],
+            isSearch: false,
+            skey: getSearchString('skey') || '',
+            page: 1,
+            limit: 20,
+            pageFlag: true,
+            totalCount: 0,
+            pages: 0,
+            goumaiIndex: -1, //当前购买的索引
+            radomIndex: -1,
+            dialog2: false,
+            fangshi: -1,  // 选择支付方式 -1未支付 2特权 1金币 3支付宝
+            zhekou: 0, //折扣
+            hignDiKou: 1, //折扣价格
+            step2: 1, // 1进行购买 3购买成功 2购买失败
+            payTimer2: null,
+            isBox: 0,
+            userjin: '',
+            useryin: '',
+            isTequan: '',
+            erweima2: '',
+            tishiFlag: false,
+            linkUrl: '',
+            noData: false,
+            isFull: true,
+            index1: 0,  // 收录请求 切换
+            name: '',
+            tel: '',
+            adress: ''
+        },
+        watch: {
+            dialog2(a, b){
+                if (!a) {
+                    clearInterval(this.payTimer2)
+                } else {
+                    // 每次打开弹出层重置
+                    this.step2 = 1
+                    this.tishiFlag = false
+                    this.fangshi = -1
+                    this.zhekou = 0
+                    this.name = ''
+                    this.tel = ''
+                    this.adress = ''
+                }
+            },
+            step2(a){
+                this.step2 = a
+                if (a != 1) {
+                    clearInterval(this.payTimer2)
+                }
+            },
+            fangshi(a){
+                if (a != 3) {
+                    clearInterval(this.payTimer2)
+                }
+            }
+        },
+        computed: {
+            minHeight(){
+                return $(window).height() - 110 + 'px'
+            }
+        },
+        mounted(){
+            objectFit.polyfill({
+                selector: 'img',
+                fittype: 'cover'
+            });
+
+            var that = this
+            this.getData(this.skey)
+            this.getMorn(function () {
+                that.pageFlag = false;
+                that.page++
+                if (that.page > that.pages) {
+                    $.Prompt('已经没有数据了')
+                    return false
+                } else {
+                    that.getData(that.skey)
+                }
+            })
+            this.getUserPay()
+        },
+        methods: {
+            // 失去焦点
+            blurFn(){
+                this.zhekou = this.zhekou ? this.zhekou : 0
+            },
+            // 搜索回调
+            searchcb(){
+                this.isSearch = true
+            },
+            // 获取列表
+            getData(skey){
+                var that = this;
+                $.ajax({
+                    url: api + '/baba/goods/getGoodsList',
+                    type: 'get',
+                    beforeSend: function () {
+                        loading.show()
+                    },
+                    data: {
+                        skey: skey,
+                        page: this.page,
+                        limit: this.limit
+                    },
+                    success: function (res) {
+                        loading.hide()
+                        if (res.code == 'LPB0001') {
+                            if (res.data.data.length == 0) {
+                                that.index1 = 3
+                            } else {
+                                that.list = that.list.concat(res.data.data)
+                                that.pageFlag = true;
+                                that.totalCount = res.data.totalCount
+                                that.pages = res.data.pages
+                                that.isBox = res.data.orther.boxId
+                                var radom = Math.ceil(Math.random() * that.list.length)
+                                that.radomIndex = radom
+                            }
+                        }
+                    },
+                    error: function () {
+                        loading.hide()
+                    }
+                })
+            },
+            //分页
+            getMorn(cb){
+                var that = this;
+                var timer = null;
+                window.addEventListener('scroll', function () {
+                    clearTimeout(timer)
+                    timer = setTimeout(function () {
+                        var zHeight = $(document).height();//页面高度是文档高度 不是body高度
+                        var kHeight = $(window).height();
+                        var scrollTop = $(window).scrollTop();
+                        console.log(kHeight, scrollTop, zHeight)
+                        if (kHeight + scrollTop >= zHeight && that.pageFlag == true) {
+                            cb()
+                        }
+                    }, 30)
+                }, false)
+            },
+            // 提交收录
+            sendShouLu(){
+                if (!userInfor) {
+                    $.Prompt('请先登录')
+                    return false
+                }
+                if (this.linkUrl === '') {
+                    $.Prompt('请输入链接')
+                    return false
+                }
+                var that = this;
+                $.ajax({
+                    url: api + '/baba/goods/saveSteamUrl',
+                    type: 'get',
+                    beforeSend: function () {
+                        loading.show()
+                    },
+                    data: {
+                        steamUrl: this.linkUrl
+                    },
+                    success: function (res) {
+                        if (res.code == 'LPB0001') {
+                            that.index1 = 2
+                        }
+                        loading.hide()
+                    },
+                    error: function () {
+                        loading.hide()
+                    }
+                })
+            },
+            fangshiClick(type){
+                this.fangshi = type
+                if (type == 3) {
+                    this.tishiFlag = false
+                    // 选择支付宝之前先验证输入是否合法
+                    var that = this
+                    this.getAliPayId2()
+                    clearInterval(this.payTimer2)
+                    this.payTimer2 = setInterval(function () {
+                        that.checkMa2()
+                    }, 3000)
+                }
+            },
+            //购买弹出
+            goumaiFn(){
+                console.log(this.userInfor)
+//                if(!this.userInfor){
+//                    $.Prompt('你还未登录')
+//                    return false
+//                }
+                this.dialog2 = true
+                this.$nextTick(function () {
+                    var width = $(".myPay").width()
+                    console.log(width)
+                    $(".goumaiInfor").innerWidth(width - 2)
+                })
+            },
+            saveInfor(){
+                var telMoshi = /^1[23456789]\d{9}$/; //手机号验证
+                if (!this.name) {
+                    $.Prompt('请输入姓名')
+                } else if (!this.tel) {
+                    $.Prompt('请输入电话')
+                } else if (!telMoshi.test(this.tel)) {
+                    $.Prompt('请输入正确的格式')
+                } else if (!this.adress) {
+                    $.Prompt('请输入地址')
+                } else {
+                    // 保存的接口
+                }
+            },
+            //账户余额
+            getUserPay(){
+                var that = this;
+                $.ajax({
+                    url: api + '/baba/userinfo/getUserAccountAmount',
+                    type: 'get',
+                    beforeSend: function () {
+                        loading.show()
+                    },
+                    success: function (res) {
+                        loading.hide()
+                        if (res.code == 'LPB0001') {
+                            console.log(res)
+                            that.userjin = res.data.goldAmount
+                            that.useryin = res.data.silverAmount
+                            that.isTequan = res.data.boxAmount
+                        }
+                    },
+                    error: function () {
+                        loading.hide()
+                    }
+                })
+            },
+            // 输入验证实时验证
+            validata(){
+                if (this.zhekou > this.list[this.goumaiIndex].silverPrice) {
+                    this.zhekou = this.list[this.goumaiIndex].silverPrice
+                    $.Prompt('输入银币不能高于最高抵扣银币')
+                } else {
+                    // 输入框改变重新生成二维码 验证合法
+                    var that = this
+                    this.getAliPayId2()
+                    clearInterval(this.payTimer2)
+                    this.payTimer2 = setInterval(function () {
+                        that.checkMa2()
+                    }, 3000)
+                }
+            },
+            //确认购买
+            enterGoumai(){
+                if (this.zhekou > this.list[this.goumaiIndex].silverPrice) {
+                    $.Prompt('输入银币不能高于最高抵扣银币')
+                } else if (this.list[this.goumaiIndex].goldPrice - this.zhekou > this.userjin) {
+                    this.tishiFlag = true
+                    $.Prompt('金币不足,请选择其他支付方式')
+                } else {
+                    this.jinbiPay()
+                }
+            },
+            //baba币购买
+            jinbiPay(){
+                var that = this;
+                $.ajax({
+                    url: api + '/baba/goods/buyGoodUserBabaMoney',
+                    type: 'get',
+                    beforeSend: function () {
+                        loading.show()
+                    },
+                    data: {
+                        goodId: that.list[that.goumaiIndex].goodId,
+                        buyType: that.fangshi,
+                        silverCount: that.zhekou || 0
+                    },
+                    success: function (res) {
+                        loading.hide()
+                        if (res.code == 'LPB0001') {
+                            console.log(res)
+                            that.step2 = 3
+                        } else {
+                            that.step2 = 2
+                        }
+                    },
+                    error: function () {
+                        loading.hide()
+                    }
+                })
+            },
+            // 获取支付宝订单id
+            getAliPayId2(){
+                var that = this;
+                $.ajax({
+                    url: api + '/baba/goods/getBuyGoodOrderId',
+                    type: 'get',
+                    beforeSend: function () {
+                        loading.show()
+                    },
+                    data: {
+                        goodId: that.list[that.goumaiIndex].goodId,
+                        silverCount: that.zhekou || 0
+                    },
+                    success: function (res) {
+                        loading.hide()
+                        if (res.code == 'LPB0001') {
+                            console.log(res)
+                            that.oid = res.data
+                            var qrsrc = api + '/baba/goods/gotoReplaceGold?oid=' + res.data
+                            that.erweima2 = api + '/baba/act/getQrCode?chl=' + encodeURIComponent(qrsrc) + '&chs=120x120'
+                        }
+                    },
+                    error: function () {
+                        loading.hide()
+                    }
+                })
+            },
+            // 检测支付状态
+            checkMa2(){
+                var that = this;
+                $.ajax({
+                    url: api + '/baba/goods/getReplaceStatusById',
+                    type: 'get',
+                    data: {
+                        oid: that.oid
+                    },
+                    success: function (res) {
+                        if (res.code == 'LPB0001') {
+                            console.log(res)
+                            if (res.data == 3) {
+                                that.step2 = 3
+                                clearInterval(that.payTimer2)
+                            } else if (res.data == 2) {
+                                that.step2 = 2
+                                clearInterval(that.payTimer2)
+                            }
+                        }
+                    },
+                    error: function () {
+                        $.Prompt(res.message)
+                    }
+                })
+            },
+
+            // 充值 置换金币页面
+            showZhiHuan(){
+                this.dialog2 = false
+                bus.emit('showZhiHuan', true)
+            }
+        }
+    })
+</script>

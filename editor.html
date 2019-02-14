@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>编辑宝箱</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <link rel="icon" href="images/favicon.ico">
+    <script src="js/limit.js"></script>
+    <link rel="stylesheet" href="css/polyfill.object-fit.min.css">
+    <link rel="stylesheet" href="css/all.css">
+</head>
+<body>
+
+<div class="shopIndex" v-cloak>
+
+    <!--用户-->
+    <div class="user_index">
+
+        <head-top-nav :is-box="isBox" :touxiang="touxiang" :is-full="isFull"></head-top-nav>
+
+        <div class="left_user" :style="{right:isFull?'20px':'300px'}" style="overflow-x: hidden;bottom: 0;">
+            <div class="ziliao_top">
+                <div class="editorDiv">
+                    <p>锁定样式</p>
+                    <div class="upload_img">
+                        <input type="file" accept="image/*" @change="uploadImg" name="Filedata">
+                        <img :src="lockUrl||'./images/renxing.png'" alt="" width="280" height="280">
+                    </div>
+                </div>
+                <div class="editorDiv">
+                    <p>解锁样式</p>
+                    <div class="upload_img">
+                        <input type="file" accept="image/*" @change="uploadImg2" name="Filedata">
+                        <img :src="unlockUrl||'./images/renxing.png'" alt="" width="280" height="280">
+                    </div>
+                </div>
+            </div>
+            <div class="ziliao_content">
+                <div class="one">
+                    <h3>宝箱信息</h3>
+                    <div class="form">
+                        <div class="li">
+                            <p>名称</p>
+                            <input v-model="name" type="text" placeholder="张三">
+                        </div>
+                        <div class="li li3">
+                            <div class="jun">
+                                <p>掉率周期</p>
+                                <select name="xb" v-model="interTime">
+                                    <option value="1">日</option>
+                                    <option value="2">周</option>
+                                    <option value="3">月</option>
+                                </select>
+                            </div>
+                            <div class="jun jun2">
+                                <p>最多掉出数量（[-]为无限）</p>
+                                <input v-model="num" placeholder="请输入数量" style="width: 140px;">
+                            </div>
+                        </div>
+                        <div class="li li3">
+                            <div class="jun jun2">
+                                <p>掉率</p>
+                                <input v-model="diaolv" placeholder="请输入掉率" style="width: 140px;">
+                                <span>%</span>
+                            </div>
+                        </div>
+                        <div class="li">
+                            <p>解锁时间</p>
+                            <div class="shifenmiao">
+                                <input placeholder="时" v-model="h" type="number" min="0" max="24">
+                                <input placeholder="分" v-model="m" type="number" min="0" max="60">
+                                <input placeholder="秒" v-model="s" type="number" min="0" max="60">
+                            </div>
+                        </div>
+                        <div class="save2" @click="save">保存</div>
+                    </div>
+                </div>
+                <!--宝物列表-->
+                <div class="one">
+                    <h3>宝物</h3>
+                    <!--宝物列表-->
+                    <div class="form" v-if="goods.length">
+                        <div class="li li3" v-for="(item,index) in goods">
+                            <div class="jun">
+                                <p>名称</p>
+                                <input v-model="item.goodName" placeholder="什么也没有" style="width: 130px;">
+                            </div>
+                            <div class="jun jun2">
+                                <p>掉率</p>
+                                <input v-model="item.dropProbability" placeholder="0" style="width: 140px;">
+                                <span>%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!--编辑宝箱也能添加新宝物 v-if="boxId==0" -->
+                    <div class="addBaoWu form">
+                        <div class="li li3 li3_2">
+                            <div class="jun">
+                                <p>请输入宝物名称</p>
+                                <input v-model="goodName2" placeholder="" style="width: 130px;">
+                            </div>
+                            <div class="jun jun2">
+                                <p>请输入宝物掉率</p>
+                                <input type="number" v-model="dropProbability2" placeholder="" style="width: 140px;">
+                                <span>%</span>
+                            </div>
+                            <div class="addIcon" @click="addBaoWu">
+                                <img src="./images/addIcon.jpg" alt="">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="updown" @click="isFull=!isFull" :style="{right:isFull?'0px':'280px'}">
+            <img :src="isFull?'./images/left_user2.png':'./images/left_user.png'" alt="">
+        </div>
+
+        <!--传递值得时候注意 驼峰命名要写成中间是“-”分割的-->
+        <center-right-nav :is-auth="isAuth" :touxiang="touxiang" :is-full="isFull"></center-right-nav>
+
+    </div>
+
+    <!--置换金币-->
+    <zhi-huan :touxiang="touxiang"></zhi-huan>
+
+</div>
+
+</body>
+</html>
+<script src="js/jquery-1.10.1.min.js"></script>
+<script src="js/main.js"></script>
+<script src="js/vue.js"></script>
+<script src="components/headTopNav.js"></script>
+<script src="components/rightNav.js"></script>
+<script src="components/zhiHuan.js"></script>
+<script src="components/page.js"></script>
+<script src="js/polyfill.object-fit.min.js"></script>
+<script src="laydate/laydate.js"></script>
+<script>
+    var index = new Vue({
+        el: '.shopIndex',
+        data: {
+            touxiang: api + '/static/images/renxing.png',
+            userInfor: userInfor, //是否登录
+            isFull: false, //是否为全屏
+            isAuth: true, //是否有管理员权限开关 自己定义
+            list: {},
+            isBox: '', // 点击领取宝箱必须的参数 从getData中拿
+
+            lockUrl: '', // 锁定样式
+            unlockUrl: '', // 解锁样式
+            name: '',  // 名称
+            interTime: 1, // 周期   1日 2周 3月
+            num: '',  // 数量
+            // public:1, // 是否共享  1是 2否
+            diaolv: '', // 掉率
+            gameTime: '', // 解锁时间
+            goods: [], //宝箱集合
+            saveGoods: [],
+            h: '',
+            m: '',
+            s: '',
+            boxId: getSearchString('boxId') || 0,
+            goodName: '', //宝物名称
+            dropProbability: '', // 宝物掉率
+            goodName2: '', //增加宝物名称
+            dropProbability2: '', // 增加宝物掉率
+
+            //diaolvis100:0 //掉率综合是否为100
+        },
+        watch: {
+            h(a){
+                if (a > 24) {
+                    this.h = 24
+                }
+            },
+            m(a){
+                if (a > 60) {
+                    this.m = 60
+                }
+            },
+            s(a){
+                if (a > 60) {
+                    this.s = 60
+                }
+            },
+        },
+        mounted(){
+            objectFit.polyfill({
+                selector: 'img',
+                fittype: 'cover'
+            });
+            if (getSearchString('boxId') !== 0) {
+                this.getData2()
+            }
+        },
+        methods: {
+            // 上传图片
+            uploadImg($event){
+                var file = $event.target.files[0]
+                var url1 = URL.createObjectURL(file);
+                this.lockUrl = url1;
+                var url = 'https://image.llzg.cn/iserver/upload/single?thumb=yes&callback=https://ciyunsi.llzg.cn/upload/passdata'
+                var formData = new FormData();
+                formData.append('Filedata', file);//第一张图片
+                var that = this;
+                $.ajax({
+                    url: url,
+                    type: 'post',
+                    beforeSend: function () {
+                        loading.show()
+                    },
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        loading.hide()
+                        console.log(JSON.parse(res))
+                        that.lockUrl = JSON.parse(res).url
+                        console.log(that.lockUrl)
+                    },
+                    error: function () {
+                        loading.hide()
+                    }
+                })
+            },
+            // 上传2
+            uploadImg2($event){
+                var file = $event.target.files[0]
+                var url1 = URL.createObjectURL(file);
+                this.unlockUrl = url1;
+                var url = 'https://image.llzg.cn/iserver/upload/single?thumb=yes&callback=https://ciyunsi.llzg.cn/upload/passdata'
+                var formData = new FormData();
+                formData.append('Filedata', file);//第一张图片
+                var that = this;
+                $.ajax({
+                    url: url,
+                    type: 'post',
+                    beforeSend: function () {
+                        loading.show()
+                    },
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        loading.hide()
+                        console.log(JSON.parse(res))
+                        that.unlockUrl = JSON.parse(res).url
+                        console.log(that.unlockUrl)
+                    },
+                    error: function () {
+                        loading.hide()
+                    }
+                })
+            },
+            // 宝箱编辑详情
+            getData2(){
+                var that = this;
+                $.ajax({
+                    url: api + '/baba/box/getBoxDetailById',
+                    type: 'get',
+                    beforeSend: function () {
+                        loading.show()
+                    },
+                    data: {
+                        boxId: getSearchString('boxId') || 0
+                    },
+                    success: function (res) {
+                        loading.hide()
+                        if (res.code == 'LPB0001') {
+                            console.log(res);
+                            that.list = res.data
+                            if (res.data) {
+                                that.goods = res.data.goods
+                                that.lockUrl = res.data.lockUrl
+                                that.unlockUrl = res.data.unlockUrl
+                                that.name = res.data.boxName  // 名称
+                                that.interTime = 1, //周期
+                                    that.num = res.data.maxCount, // 最大数量
+                                    //that.public=res.data.isShared, // 是否共享
+                                    that.diaolv = res.data.dropProbability, //掉率
+                                    // that.gameTime=res.data.unlockTime //解锁时间
+
+                                    that.h = formatSeconds(res.data.unlockTime).split(',')[0]
+                                that.m = formatSeconds(res.data.unlockTime).split(',')[1]
+                                that.s = formatSeconds(res.data.unlockTime).split(',')[2]
+
+                                if (res.data.orther) {
+                                    that.isBox = res.data.orther.boxId
+                                } else {
+                                    that.isBox = 0
+                                }
+                            }
+                        }
+                    },
+                    error: function () {
+                        loading.hide()
+                    }
+                })
+            },
+            // 添加宝物
+            addBaoWu(){
+                if (this.goodName2 == '') {
+                    $.Prompt('请输入宝物名称')
+                } else if (!this.dropProbability2) {
+                    $.Prompt('请输入宝物掉落概率')
+                } else {
+                    if (this.goods.length >= 4) {
+                        $.Prompt('最多只能添加4个宝物')
+                        return false
+                    }
+                    this.goods.push({
+                        goodName: this.goodName2, // 宝物名称
+                        dropProbability: this.dropProbability2 //宝物掉率概率
+                    })
+                    this.goodName2 = ''
+                    this.dropProbability2 = ''
+                    console.log(this.goods)
+                }
+            },
+            // 宝箱更新
+            save(){
+                var that = this;
+                //that.diaolvis100 = 0
+                // 宝物集合
+                this.goods.forEach(function (item, index) {
+                    that.saveGoods.push({
+                        goodName: item.goodName, // 宝物名称
+                        dropProbability: item.dropProbability //宝物掉率概率
+                    })
+                    //that.diaolvis100+=parseInt(item.dropProbability)
+                })
+                //console.log(that.diaolvis100);
+                if (this.lockUrl == '') {
+                    $.Prompt('请上传锁定样式')
+                } else if (this.unlockUrl == '') {
+                    $.Prompt('请上传解锁样式')
+                } else if (this.name == '') {
+                    $.Prompt('请输入宝箱名称')
+                } else if (this.num == '') {
+                    $.Prompt('请输入掉出数量')
+                } else if (this.diaolv == '') {
+                    $.Prompt('请输入掉率')
+                } else if (this.diaolv != 100) {
+                    $.Prompt('掉率必须为100%')
+                } else if (this.h == '') {
+                    $.Prompt('请输入解锁小时')
+                }
+                if (this.m == '') {
+                    $.Prompt('请输入解锁分钟')
+                }
+                if (this.s == '') {
+                    $.Prompt('请输入解锁秒数')
+                } else if (this.saveGoods.length <= 0) {
+                    $.Prompt('请添加宝物')
+                }/*else if(that.diaolvis100!=100){
+                 $.Prompt('宝物掉率必须为100')
+                 }*/ else {
+                    this.saveAjax()
+                }
+            },
+            // 保存更新请求
+            saveAjax(){
+                var that = this;
+                var obj = {
+                    id: getSearchString('boxId') || 0,
+                    boxName: this.name, // 宝箱名称
+                    dropCycle: this.interTime, //周期
+                    lockUrl: this.lockUrl, // 锁定样式
+                    unlockUrl: this.unlockUrl, // 解锁样式
+                    maxCount: this.num, // 数量
+                    isShared: this.public, // 是否共享
+                    dropProbability: this.diaolv, // 掉率
+                    unlockTime: Number(this.h * 3600) + Number(this.m * 60) + Number(this.s), // )解锁时间
+                    // 宝物集合
+                    goods: this.saveGoods
+                }
+                console.log(obj);
+                $.ajax({
+                    url: api + '/baba/box/saveOrUpdateBox',
+                    type: 'post',
+                    beforeSend: function () {
+                        loading.show()
+                    },
+                    contentType: "application/json",
+                    dataType: "json",
+                    data: JSON.stringify(obj),
+                    success: function (res) {
+                        loading.hide()
+                        window.location.href = "setbx.html"
+                        that.saveGoods = []
+                    },
+                    error: function () {
+                        loading.hide()
+                    }
+                })
+            }
+        }
+    })
+</script>

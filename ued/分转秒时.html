@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+</body>
+</html>
+<script>
+    var h= aaa(6).split(',')[0]
+    var m= aaa(6).split(',')[1]
+    var s= aaa(6).split(',')[2]
+    console.log(h, m, s);
+    function aaa(times){
+        //求出小时的余数  秒数/3600=小时数+余数   此处已经把天数的余数又算进来了 继续进行运算
+        var timeH = parseInt(times / 3600);
+        times %= 3600;
+        //求分钟
+        var timeM = parseInt(times / 60);
+        times %= 60;
+        //求秒数
+        var timeS = parseInt(times);
+
+        return timeH+','+timeM+','+timeS
+    }
+</script>

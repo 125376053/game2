@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>宝箱设置</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <link rel="icon" href="images/favicon.ico">
+    <script src="js/limit.js"></script>
+    <link rel="stylesheet" href="css/pager.css">
+    <link rel="stylesheet" href="css/polyfill.object-fit.min.css">
+    <link rel="stylesheet" href="css/all.css">
+</head>
+<body>
+
+<div class="shopIndex" v-cloak>
+
+    <!--用户-->
+    <div class="user_index">
+
+        <!--props传递时 必须把驼峰写成 “-”分割的-->
+        <head-top-nav :is-box="isBox" :touxiang="touxiang" :is-full="isFull"></head-top-nav>
+
+        <page :pages="pages" :is-full="isFull"></page>
+
+        <div class="left_user" :style="{right:isFull?'20px':'300px'}">
+
+            <div class="bx_ul">
+                <div class="li ts"
+                     v-for="(item,index) in list"
+                     :style="{
+                        background:item.status==0?'url('+item.unlockUrl+')':'url('+item.lockUrl+')',
+                        backgroundSize:'cover'
+                     }"
+                     @click="gotoEditor"
+                     @mouseover="boxIndex=index"
+                     @mouseout="boxIndex=-1"
+                >
+                    <p class="top"></p>
+                    <p class="bot">
+                        <span>{{item.boxName}}</span>
+                        <i v-if="boxIndex==index">
+                            <b @click.stop="deleteBox">删除</b>
+                            <a :href="'mingdan.html?boxId='+item.boxId" style="color:#333;">名单</a>
+                        </i>
+                    </p>
+                    <div class="tishiContent" style="display: none">
+                        <h5>{{item.boxName}}</h5>
+                        <p v-for="(item1,index1) in item.goods">
+                            {{item1.dropProbability+'%'}}
+                            {{item1.goodName}}
+                        </p>
+                    </div>
+                </div>
+                <a href="editor.html?boxId=0" class="li add">添加</a>
+            </div>
+
+        </div>
+
+        <div class="updown" @click="isFull=!isFull" :style="{right:isFull?'0px':'280px'}">
+            <img :src="isFull?'./images/left_user2.png':'./images/left_user.png'" alt="">
+        </div>
+
+        <!--传递值得时候注意 驼峰命名要写成中间是“-”分割的-->
+        <center-right-nav :is-auth="isAuth" :touxiang="touxiang" :is-full="isFull"></center-right-nav>
+
+        <!--开箱-->
+        <div class="dialog" v-if="open">
+            <div class="dialog_content">
+                <div class="pc">
+                    <div class="left">
+                        <p>{{list[boxIndex].endTime}}</p>
+                    </div>
+                    <div class="right">
+                        <p class="title">{{list[boxIndex].boxName}}</p>
+                        <div class="divjs">
+                            <p>解锁</p>
+                            <div class="caozuo">
+                                <p>
+                                    <img src="./images/add1.png" alt="" height="12">
+                                    <span>1</span>
+                                    <b>立即开启</b>
+                                </p>
+                                <p>
+                                    <img src="./images/add2.png" alt="" height="12">
+                                    <span>1</span>
+                                    <b>-10小时</b>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="xinxi">
+                            <img :src="sendMa" alt="">
+                            <div class="tishi2">
+                                <p class="p1">邀请好友进行破解</p>
+                                <p class="p2">每邀请一位好友破解，可使宝箱解锁时间减少1小时</p>
+                                <p class="p3">可使用手机扫二维码转发分享或<a href="javascript:;">复制链接</a>邀请好友帮忙破解</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <a class="closed2" @click="open=!open" href="javascript:;">
+                    <img src="./images/closed2.png" alt="">
+                </a>
+            </div>
+        </div>
+
+        <!--置换金币-->
+        <zhi-huan :touxiang="touxiang"></zhi-huan>
+
+    </div>
+
+</div>
+
+</body>
+</html>
+<script src="js/jquery-1.10.1.min.js"></script>
+<script src="js/pager.js"></script>
+<script src="js/main.js"></script>
+<script src="js/vue.js"></script>
+<script src="components/headTopNav.js"></script>
+<script src="components/rightNav.js"></script>
+<script src="components/zhiHuan.js"></script>
+<script src="components/page.js"></script>
+<script src="js/polyfill.object-fit.min.js"></script>
+<script>
+    var index=new Vue({
+        el:'.shopIndex',
+        data:{
+            touxiang:api+'/static/images/renxing.png',
+            userInfor:userInfor, //是否登录
+            isFull:false, //是否为全屏
+            isAuth:true,
+            open:false,
+            boxIndex:-1, // 当前箱子
+
+            // 转发二维码
+            sendMa:'',
+
+            // 分页
+            page:1,
+            limit:10,
+            list:[],
+            pages:'',
+            skey:'',
+            isBox:''
+        },
+        watch:{
+            open(a){
+                if(a){
+                    var qrsrc=api+'/baba/box/openBoxQrCode?pickId='+this.list[this.boxIndex].boxId+'&uid='+userInfor?userInfor.userId:''
+                    this.sendMa=api+'/baba/act/getQrCode?chl='+encodeURIComponent(qrsrc)+'&chs=120x120'
+                }
+            }
+        },
+        mounted(){
+            objectFit.polyfill({
+                selector: 'img',
+                fittype: 'cover'
+            });
+            this.getData(this.skey)
+        },
+        methods:{
+            gotoEditor(){
+                window.location.href="./editor.html?boxId="+this.list[this.boxIndex].boxId
+            },
+            // 管理员箱子列表
+            getData(skey){
+                var that=this;
+                $.ajax({
+                    url:api+'/baba/box/getBoxList',
+                    type:'get',
+                    beforeSend:function(){
+                        loading.show()
+                    },
+                    data:{
+                        skey:skey,
+                        page:this.page,
+                        limit:this.limit
+                    },
+                    success:function(res){
+                        loading.hide()
+                        if(res.code == 'LPB0001'){
+                            console.log(res)
+                            that.list=res.data.data
+                            that.pages=res.data.pages
+                            that.$nextTick(function(){
+                                tips('.ts')
+                            })
+                            if(res.data.orther){
+                                that.isBox= res.data.orther.boxId
+                            }else{
+                                that.isBox=0
+                            }
+                        }
+                    },
+                    error:function(){
+                        loading.hide()
+                    }
+                })
+            },
+            // 删除箱子
+            deleteBox(){
+                var that=this;
+                $.ajax({
+                    url:api+'/baba/box/setBoxDelete',
+                    type:'get',
+                    beforeSend:function(){
+                        loading.show()
+                    },
+                    data:{
+                        boxId:that.list[that.boxIndex].boxId
+                    },
+                    success:function(res){
+                        loading.hide()
+                        if(res.code == 'LPB0001'){
+                            console.log(res)
+                            that.getData(that.skey)
+                        }
+                    },
+                    error:function(){
+                        loading.hide()
+                    }
+                })
+            },
+            openBox(index){
+                this.open=true
+                this.boxIndex=index
+                console.log(this.boxIndex)
+            }
+        }
+    })
+</script>

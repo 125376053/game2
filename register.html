@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>注册</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <link rel="icon" href="images/favicon.ico">
+    <script src="js/limit.js"></script>
+    <link rel="stylesheet" href="css/polyfill.object-fit.min.css">
+    <link rel="stylesheet" href="css/all.css">
+</head>
+<body>
+
+<div class="shopIndex" v-cloak>
+
+    <head-top-nav :global-nav="true" :is-box="isBox" :touxiang="touxiang" :is-full="isFull"></head-top-nav>
+
+    <!--注册-->
+    <div class="content_index">
+        <div class="register">
+            <div class="left">
+                <p class="title">BABAGAME</p>
+            </div>
+            <div class="right">
+                <p>
+                    <input v-model="phone" type="text" placeholder="手机号">
+                </p>
+                <p>
+                    <input v-model="password" type="password" placeholder="密码">
+                </p>
+                <p>
+                    <input v-model="ma" type="text" placeholder="验证码">
+                    <span class="getYan_zhuce" @click="getYan">获取</span>
+                </p>
+                <a href="javascript:;" @click="register" class="registerBtn">注册</a>
+                <a href="login.html" class="loginBtn">登录</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
+<script src="js/jquery-1.10.1.min.js"></script>
+<script src="js/main.js"></script>
+<script src="js/vue.js"></script>
+<script src="components/headTopNav.js"></script>
+<script src="js/polyfill.object-fit.min.js"></script>
+<script>
+    var index=new Vue({
+        el:'.shopIndex',
+        data:{
+            api:api,
+            touxiang:api+'/static/images/renxing.png',
+            userInfor:userInfor, //是否登录
+            password: '',
+            phone: getCookie('shoujihao') || '',
+            ma:'',
+            skey:'',
+            isBox:0,
+            isFull:true
+            //username:'13546583152'
+        },
+        mounted(){
+            objectFit.polyfill({
+                selector: 'img',
+                fittype: 'cover'
+            });
+            if(getCookie('captcha')!=''){
+                daojishi()
+            }
+        },
+        methods:{
+            register(){
+                var telMoshi = /^1[23456789]\d{9}$/; //手机号验证
+                var passMoshi = /^[0-9a-zA-Z]{6,20}$/g; //密码验证
+                if(this.phone=="" && !telMoshi.test(this.phone)){
+                    jalert('请输入正确的手机号码');
+                    return false;
+                }else if (!passMoshi.test(this.password)) {
+                    jalert('密码由6-12位数字，大小写字母组成');
+                    return false;
+                }else if(this.ma==""){
+                    jalert('请输入验证码');
+                }else{
+                    this.registerFn()
+                }
+            },
+            registerFn(){
+                var that=this;
+                var obj={
+                    nickName:this.phone,
+                    pwd:this.password,
+                    code:this.ma,
+                    phone:this.phone
+                }
+                $.ajax({
+                    url:api+'/baba/act/registUser',
+                    type:'post',
+                    beforeSend:function(){
+                        loading.show()
+                    },
+                    contentType : "application/json",
+                    dataType : "json",
+                    data:JSON.stringify(obj),
+                    success:function(res){
+                        loading.hide()
+                        console.log(res)
+                        if(res.code == 'LPB0001'){
+                            $.Prompt('注册成功');
+                            window.location.href='login.html'
+                        }else{
+                            $.Prompt(res.message);
+                        }
+                    },
+                    error:function(){
+                        loading.hide()
+                    }
+                })
+            },
+            getYan(){
+                setCookie('shoujihao', this.phone || '', 7);//设置手机号cookie 7天
+                var telMoshi = /^1[23456789]\d{9}$/; //手机号验证
+                if (this.phone ==='' && !telMoshi.test(this.phone)) {
+                    $.Prompt('请输入正确的手机号码');
+                    return false;
+                }else {
+                    this.checkMa()
+                }
+            },
+            checkMa(){
+                var that=this;
+                $.ajax({
+                    url:api+'/baba/act/sendSms',
+                    type:'get',
+                    beforeSend:function(){
+                        loading.show()
+                    },
+                    data:{
+                        phone:that.phone
+                    },
+                    success:function(res){
+                        loading.hide()
+                        console.log(res)
+                        if(res.code == 'LPB0001'){
+                            $.Prompt('验证码发送成功');
+                            daojishi()
+                        }else{
+                            $.Prompt(res.message);
+                        }
+                    },
+                    error:function(){
+                        loading.hide()
+                    }
+                })
+            }
+        }
+    })
+</script>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>积分规则</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <link rel="icon" href="images/favicon.ico">
+    <script src="js/limit.js"></script>
+    <link href="ued/themes/default/css/umeditor.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/polyfill.object-fit.min.css">
+    <link rel="stylesheet" href="css/all.css">
+    <style>
+        .edui-container{ height: calc(100% - 20px);}
+    </style>
+</head>
+<body>
+
+<div class="shopIndex" v-cloak>
+    <!--用户-->
+    <div class="user_index">
+
+        <!--props传递时 必须把驼峰写成 “-”分割的-->
+        <head-top-nav :is-box="isBox" :touxiang="touxiang" :is-full="isFull"></head-top-nav>
+
+        <div class="left_user" :style="{right:isFull?'20px':'300px'}">
+            <div style="margin-top: 30px;" v-html="actRule"></div>
+        </div>
+
+        <div class="updown" @click="isFull=!isFull" :style="{right:isFull?'0px':'280px'}">
+            <img :src="isFull?'./images/left_user2.png':'./images/left_user.png'" alt="">
+        </div>
+
+        <!--传递值得时候注意 驼峰命名要写成中间是“-”分割的-->
+        <center-right-nav :is-auth="isAuth" :touxiang="touxiang" :is-full="isFull"></center-right-nav>
+
+    </div>
+
+    <!--置换金币-->
+    <zhi-huan :touxiang="touxiang"></zhi-huan>
+
+</div>
+
+</body>
+</html>
+<script src="js/jquery-1.10.1.min.js"></script>
+<script src="js/polyfill.object-fit.min.js"></script>
+<script src="js/main.js"></script>
+<script src="js/vue.js"></script>
+<script src="components/headTopNav.js"></script>
+<script src="components/rightNav.js"></script>
+<script src="components/zhiHuan.js"></script>
+<script src="components/page.js"></script>
+<script>
+    var index=new Vue({
+        el:'.shopIndex',
+        data:{
+            touxiang:api+'/static/images/renxing.png',
+            userInfor:userInfor, //是否登录
+            actRule:'', //编辑器
+            isFull:false, //是否为全屏
+            isBox:'',
+            isAuth:false, //是否有管理员权限开关 自己定义
+        },
+        mounted(){
+            objectFit.polyfill({
+                selector: 'img',
+                fittype: 'cover'
+            });
+            this.getEditor()
+        },
+        methods:{
+            getEditor(){
+                var that=this;
+                $.ajax({
+                    url:api+'/baba/box/getActRule',
+                    type:'get',
+                    beforeSend:function(){
+                        loading.show()
+                    },
+                    success:function(res){
+                        loading.hide()
+                        console.log(res)
+                        that.actRule=res.data
+                        if(res.data.orther){
+                            that.isBox= res.data.orther.boxId
+                        }else{
+                            that.isBox=0
+                        }
+                    },
+                    error:function(){
+                        loading.hide()
+                    }
+                })
+            },
+            saveEditor(){
+                var that=this;
+                var obj={
+                    actRule:that.actRule
+                }
+                $.ajax({
+                    url:api+'/baba/box/saveActRule',
+                    type:'post',
+                    beforeSend:function(){
+                        loading.show()
+                    },
+                    contentType : "application/json",
+                    dataType : "json",
+                    data:JSON.stringify(obj),
+                    success:function(res){
+                        loading.hide()
+                        that.actRule=res.data
+                    },
+                    error:function(){
+                        loading.hide()
+                    }
+                })
+            }
+        }
+    })
+</script>

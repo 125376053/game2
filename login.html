@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>登录</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <link rel="icon" href="images/favicon.ico">
+    <script src="js/limit.js"></script>
+    <link rel="stylesheet" href="css/polyfill.object-fit.min.css">
+    <link rel="stylesheet" href="css/all.css">
+</head>
+<body>
+
+<div class="shopIndex" v-cloak>
+
+    <head-top-nav :global-nav="true" :is-box="isBox" :touxiang="touxiang" :is-full="isFull"></head-top-nav>
+
+    <!--登录-->
+    <div class="content_index">
+        <div class="register">
+            <div class="left">
+                <p class="title">BABAGAME</p>
+            </div>
+            <div class="right" style="padding-top:120px;height: 246px; position: relative;">
+                <p>
+                    <input class="phone" v-model="phone" type="text" placeholder="账号">
+                </p>
+                <p>
+                    <input v-model="password" type="password" placeholder="密码">
+                </p>
+                <a class="wangji" href="wangji.html">忘记密码</a>
+                <a href="javascript:;" @click="login" class="registerBtn">登录</a>
+                <a href="register.html" class="loginBtn">注册</a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
+<script src="js/jquery-1.10.1.min.js"></script>
+<script src="js/main.js"></script>
+<script src="js/vue.js"></script>
+<script src="components/headTopNav.js"></script>
+<script src="js/polyfill.object-fit.min.js"></script>
+<script>
+    var index=new Vue({
+        el:'.shopIndex',
+        data:{
+            api:api,
+            touxiang:api+'/static/images/renxing.png',
+            userInfor:userInfor, //是否登录
+            password: '',
+            phone: getCookie('shoujihao') || '',
+            skey:'',
+            isBox:0,
+            isFull:true
+        },
+        mounted(){
+            objectFit.polyfill({
+                selector: 'img',
+                fittype: 'cover'
+            });
+        },
+        methods:{
+            login(){
+                setCookie('shoujihao', this.phone || '', 7);//设置手机号cookie 7天
+                var telMoshi = /^1[23456789]\d{9}$/; //手机号验证
+                var passMoshi = /^[0-9a-zA-Z]{6,20}$/g; //密码验证
+                if (this.phone == "" && !telMoshi.test(this.phone)) {
+                    jalert('请输入正确的手机号码');
+                    return false;
+                } else if (this.password == '') {
+                    jalert('密码不能为空');
+                    return false;
+                } else if (!passMoshi.test(this.password)) {
+                    jalert('密码由6-12位数字，大小写字母组成');
+                    return false;
+                } else {
+                    this.loginFn()
+                }
+            },
+            loginFn(){
+                var that = this;
+                var obj = {
+                    account: this.phone,
+                    pwd: this.password
+                }
+                $.ajax({
+                    url: api + '/baba/act/login',
+                    type: 'post',
+                    beforeSend: function () {
+                        loading.show()
+                    },
+                    contentType: "application/json",
+                    dataType: "json",
+                    data: JSON.stringify(obj),
+                    success: function (res) {
+                        loading.hide()
+                        console.log(res)
+                        if (res.code == 'LPB0001') {
+                            $.Prompt('登录成功');
+                            //window.location.href=that.api+"/static/act/index.html"
+                            window.location.href=that.api+"/baba/view/index"
+                            //缓存本地信息
+                            var userInfor=JSON.stringify(res.data);
+                            console.log(userInfor)
+                            window.sessionStorage.setItem('userInfor',userInfor)
+                        }else{
+                            $.Prompt(res.message);
+                        }
+                    },
+                    error: function () {
+                        loading.hide()
+                    }
+                })
+            }
+        }
+    })
+</script>

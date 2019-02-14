@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>用户资料</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <link rel="icon" href="images/favicon.ico">
+    <script src="js/limit.js"></script>
+    <link rel="stylesheet" href="css/pager.css">
+    <link rel="stylesheet" href="css/polyfill.object-fit.min.css">
+    <link rel="stylesheet" href="css/all.css">
+</head>
+<body>
+
+<div class="shopIndex" v-cloak>
+
+    <!--用户-->
+    <div class="user_index">
+
+        <!--props传递时 必须把驼峰写成 “-”分割的-->
+        <head-top-nav :is-box="isBox" :touxiang="touxiang" :is-full="isFull"></head-top-nav>
+
+        <div class="left_user" :style="{right:isFull?'20px':'300px'}">
+            <div class="ziliao_top">
+                <div class="upload_img">
+                    <input type="file" accept="image/*" @change="uploadImg" name="Filedata">
+                    <img :src="yulan||'./images/renxing.png'" alt="" width="280" height="280">
+                </div>
+            </div>
+            <div class="ziliao_content">
+                <h3>基本信息</h3>
+                <div class="form">
+                    <div class="li">
+                        <p>昵称</p>
+                        <input :disabled="uid" v-model="nicheng" type="text" placeholder="张三">
+                    </div>
+                    <div class="li li2">
+                        <p>QQ</p>
+                        <input :disabled="uid" v-model="qq" type="text" placeholder="未绑定">
+                        <a v-if="!list.qqAccount" href="javascript:;" @click="bindQQ">立即绑定</a>
+                        <a v-else href="javascript:;"  @click="jibang(1)">解除绑定</a>
+                    </div>
+                    <div class="li">
+                        <p>账号</p>
+                        <input disabled v-model="zhanghao" type="text">
+                    </div>
+                    <div class="li li2">
+                        <p>steam</p>
+                        <input :disabled="uid" v-model="steam" type="text" placeholder="未绑定">
+                        <a v-if="!list.steamAccount" href="javascript:;" @click="bindSteam">立即绑定</a>
+                        <a v-else href="javascript:;" @click="jibang(2)">解除绑定</a>
+                    </div>
+                    <div class="li li3">
+                        <div class="jun">
+                            <p>性别</p>
+                            <select name="xb" id="" v-model="xingbie" :disabled="uid">
+                                <option value="1">男</option>
+                                <option value="2">女</option>
+                            </select>
+                        </div>
+                        <div class="jun jun2">
+                            <p>生日</p>
+                            <input :disabled="uid" v-model="gameTime" class="laydate-icon" id="demo1" style="width: 140px;">
+                        </div>
+                    </div>
+                    <div class="li">
+                        <p>新密码</p>
+                        <input :disabled="uid" v-model="newpass" type="text" placeholder="不修改密码请勿填写">
+                    </div>
+                    <div class="li">
+                        <p>地区</p>
+                        <input :disabled="uid" v-model="area" type="text" placeholder="北京">
+                    </div>
+                    <div class="li">
+                        <p>修改密码时填写</p>
+                        <input :disabled="uid" v-model="checkpass" type="text" placeholder="修改密码时填写">
+                    </div>
+
+                    <div v-if="!uid" class="save2" @click="save">保存</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="updown" @click="isFull=!isFull" :style="{right:isFull?'0px':'280px'}">
+            <img :src="isFull?'./images/left_user2.png':'./images/left_user.png'" alt="">
+        </div>
+
+        <!--传递值得时候注意 驼峰命名要写成中间是“-”分割的-->
+        <center-right-nav :is-auth="isAuth" :touxiang="touxiang" :is-full="isFull"></center-right-nav>
+
+    </div>
+
+    <!--置换金币-->
+    <zhi-huan :touxiang="touxiang"></zhi-huan>
+
+</div>
+
+</body>
+</html>
+<script src="js/jquery-1.10.1.min.js"></script>
+<script src="js/main.js"></script>
+<script src="js/vue.js"></script>
+<script src="components/headTopNav.js"></script>
+<script src="components/rightNav.js"></script>
+<script src="components/zhiHuan.js"></script>
+<script src="components/page.js"></script>
+<script src="js/polyfill.object-fit.min.js"></script>
+<script src="laydate/laydate.js"></script>
+<script>
+    var index=new Vue({
+        el:'.shopIndex',
+        data:{
+            touxiang:api+'/static/images/renxing.png',
+            userInfor:userInfor, //是否登录
+            isFull:false, //是否为全屏
+            isAuth:true,
+            nicheng:'',
+            qq:'',
+            zhanghao:'',
+            steam:'',
+            xingbie:1, // 1男 2女
+            gameTime:'',
+            newpass:"",
+            area:'',
+            checkpass:'',
+            yulan:'',
+            list:{},
+            isBox:'',
+            uid:getSearchString('uid')
+        },
+        watch:{
+            qq(a){
+                console.log(a);
+                this.qq=a
+            },
+            steam(a){
+                console.log(a)
+                this.steam=a
+            }
+
+        },
+        mounted(){
+            objectFit.polyfill({
+                selector: 'img',
+                fittype: 'cover'
+            });
+            this.selectedTime("#demo1")
+            if(!getSearchString('uid')){
+                this.getData2()
+            }else{
+                this.getInfor()
+            }
+        },
+        methods:{
+            getInfor(){
+                var that=this;
+                $.ajax({
+                    url:api+'/baba/userinfo/manageGetUserInfoById',
+                    type:'get',
+                    beforeSend:function(){
+                        loading.show()
+                    },
+                    data:{
+                        uid:getSearchString('uid')
+                    },
+                    success:function(res){
+                        loading.hide()
+                        if(res.code == 'LPB0001'){
+                            console.log(res);
+                            that.list=res.data
+                            that.area=res.data.area
+                            that.gameTime=res.data.birthday||''
+                            that.nicheng=res.data.nickName
+                            that.qq=res.data.qqAccount
+                            that.zhanghao=res.data.account
+                            that.steam=res.data.steamAccount
+                            that.xingbie=res.data.sex||1
+                            that.yulan=res.data.avatar
+                        }
+                    },
+                    error:function(){
+                        loading.hide()
+                    }
+                })
+            },
+            getData2(){
+                var that=this;
+                $.ajax({
+                    url:api+'/baba/userinfo/getUserInfoById',
+                    type:'get',
+                    beforeSend:function(){
+                        loading.show()
+                    },
+                    data:{},
+                    success:function(res){
+                        console.log(res)
+                        that.list=res.data
+                        that.area=res.data.area
+                        that.gameTime=res.data.birthday||''
+                        that.nicheng=res.data.nickName
+                        that.qq=res.data.qqAccount
+                        that.zhanghao=res.data.account
+                        that.steam=res.data.steamAccount
+                        that.xingbie=res.data.sex||1
+                        that.yulan=res.data.avatar
+                        if(res.data.orther){
+                            that.isBox= res.data.orther.boxId
+                        }else{
+                            that.isBox=0
+                        }
+                        loading.hide()
+                    },
+                    error:function(){
+                        loading.hide()
+                    }
+                })
+            },
+            bindQQ(){
+                var that=this;
+                var qqMoshi =/^[1-9][0-9]{4,12}$/;
+                if(!this.qq){
+                    $.Prompt('请输入qq')
+                    return false
+                }else if(!qqMoshi.test(this.qq)){
+                    jalert('请输入合法的qq号')
+                    return false
+                }
+                $.ajax({
+                    url:api+'/baba/userinfo/bindqq',
+                    type:'get',
+                    beforeSend:function(){
+                        loading.show()
+                    },
+                    data:{
+                        qq:that.qq
+                    },
+                    success:function(res){
+                        console.log(res)
+                        loading.hide()
+                    },
+                    error:function(){
+                        loading.hide()
+                    }
+                })
+            },
+            bindSteam(){
+                var that=this;
+                if(!this.steam){
+                    $.Prompt('请输入链接')
+                    return false
+                }
+                $.ajax({
+                    url:api+'/baba/userinfo/bindSteam',
+                    type:'get',
+                    beforeSend:function(){
+                        loading.show()
+                    },
+                    data:{
+                        steam:that.steam
+                    },
+                    success:function(res){
+                        console.log(res)
+                        that.getData2()
+                        loading.hide()
+                    },
+                    error:function(){
+                        loading.hide()
+                    }
+                })
+            },
+            jibang(type){
+                var that=this;
+                $.ajax({
+                    url:api+'/baba/userinfo/unbindqq',
+                    type:'get',
+                    beforeSend:function(){
+                        loading.show()
+                    },
+                    data:{
+                        type:type
+                    },
+                    success:function(res){
+                        console.log(res)
+                        that.getData2()
+                        loading.hide()
+                    },
+                    error:function(){
+                        loading.hide()
+                    }
+                })
+            },
+            // 上传图片
+            uploadImg($event){
+                var file = $event.target.files[0]
+                var url1 = URL.createObjectURL(file);
+                this.yulan=url1;
+                var url = 'https://image.llzg.cn/iserver/upload/single?thumb=yes&callback=https://ciyunsi.llzg.cn/upload/passdata'
+                var formData = new FormData();
+                formData.append('Filedata', file);//第一张图片
+                var that = this;
+                $.ajax({
+                    url: url,
+                    type: 'post',
+                    beforeSend: function () {
+                        loading.show()
+                    },
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (res) {
+                        loading.hide()
+                        console.log(JSON.parse(res))
+                        that.yulan = JSON.parse(res).url
+                        console.log(that.yulan)
+                    },
+                    error: function () {
+                        loading.hide()
+                    }
+                })
+            },
+            selectedTime(id){
+                var that = this
+                laydate({
+                    elem: id, //需显示日期的元素选择器
+                    event: 'click', //触发事件
+                    type: 'datetime',
+                    format: 'YYYY-MM-DD', //日期格式 //hh:mm:ss
+                    //istime: true, //是否开启时间选择
+                    isclear: true, //是否显示清空
+                    istoday: true, //是否显示今天
+                    issure: true, //是否显示确认
+                    festival: true, //是否显示节日
+                    min: '1900-01-01 00:00:00', //最小日期
+                    max: '2099-12-31 23:59:59', //最大日期
+                    //start: '2018-6-15 23:00:00',  //开始日期
+                    fixed: false, //是否固定在可视区域
+                    zIndex: 99999999, //css z-index
+                    choose: function (dates) { //选择好日期的回调
+                        that.gameTime = dates
+                        console.log(that.gameTime)
+                    }
+                })
+            },
+            save(){
+                if(this.nicheng==''){
+                    $.Prompt('请输入昵称')
+                }else{
+                    this.saveData()
+                }
+            },
+            saveData(){
+                var that=this;
+                var obj={
+                    nickName:this.nicheng,
+                    avatar:this.yulan,
+                    account:this.zhanghao,
+                    sex:this.xingbie,
+                    birthday:this.gameTime,
+                    pwd:this.newpass,
+                    area:this.area
+                }
+                $.ajax({
+                    url:api+'/baba/userinfo/saveUserInfo',
+                    type:'post',
+                    beforeSend:function(){
+                        loading.show()
+                    },
+                    contentType : "application/json",
+                    dataType : "json",
+                    data:JSON.stringify(obj),
+                    success:function(res){
+                        console.log(res)
+                        loading.hide()
+                    },
+                    error:function(){
+                        loading.hide()
+                    }
+                })
+            }
+        }
+    })
+</script>

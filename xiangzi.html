@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>用户箱子</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <link rel="icon" href="images/favicon.ico">
+    <script src="js/limit.js"></script>
+    <link rel="stylesheet" href="css/pager.css">
+    <link rel="stylesheet" href="css/polyfill.object-fit.min.css">
+    <link rel="stylesheet" href="css/all.css">
+</head>
+<body>
+
+<div class="shopIndex" v-cloak>
+
+    <!--用户-->
+    <div class="user_index">
+
+        <!--props传递时 必须把驼峰写成 “-”分割的-->
+        <head-top-nav :is-box="isBox" :touxiang="touxiang" :is-full="isFull"></head-top-nav>
+
+        <page :pages="pages" :is-full="isFull"></page>
+
+        <div class="left_user" :style="{right:isFull?'20px':'300px'}">
+
+            <div class="bx_ul">
+                <div class="li ts" v-for="(item,index) in list" :style="{
+                    background:item.status==0?'url('+item.unlockUrl+')':'url('+item.lockUrl+')',
+                    backgroundSize:'cover'
+                }">
+                    <p class="top"></p>
+                    <!--unlock-->
+                    <p v-if="item.status==1" class="bot" @click="clickOpen(index)">
+                        <span>点击打开</span>
+                    </p>
+                    <p v-if="item.status==2" class="bot">
+                        <span>已开箱</span>
+                    </p>
+                    <p v-if="item.status==0" class="bot" style="height:90px!important;">
+                        <!--lock-->
+                        <a href="javascript:;" class="kaiqi" @click="openBox(index)">立即开启</a>
+                        <span>{{item.endTime}}</span>
+                    </p>
+                    <div class="tishiContent" style="display: none">
+                        <h5>{{item.boxName}}</h5>
+                        <p v-for="(item1,index1) in item.goods">
+                            {{item1.dropProbability+'%'}}
+                            {{item1.goodName}}
+                        </p>
+                    </div>
+                    <!--<img class="tupian2" :src="item.status===0?item.unlockUrl:item.lockUrl" alt="">-->
+                </div>
+                <div class="li add">解锁</div>
+            </div>
+
+            <a style="position: absolute;right:10px;top:10px;" href="boxJilu.html">开箱记录</a>
+
+        </div>
+
+        <div class="updown" @click="isFull=!isFull" :style="{right:isFull?'0px':'280px'}">
+            <img :src="isFull?'./images/left_user2.png':'./images/left_user.png'" alt="">
+        </div>
+
+        <!--传递值得时候注意 驼峰命名要写成中间是“-”分割的-->
+        <center-right-nav :is-auth="isAuth" :touxiang="touxiang" :is-full="isFull"></center-right-nav>
+
+        <!--点击打开-->
+        <div class="dialog" v-if="dakai">
+            <div class="dialog_content">
+                <div class="pc">
+                    <div class="left"></div>
+                    <div class="right">
+                        <p class="title">{{list[boxIndex].boxName}}</p>
+                        <p v-if="gid" style="margin-top:20px;">恭喜您获得</p>
+                        <p v-if="gid">{{gname}}</p>
+                        <p v-if="!gid" style="margin-top:20px;">什么也没有</p>
+                        <a href="javascript:;" class="registerBtn shiqu" @click="queren">确认</a>
+                    </div>
+                </div>
+                <a class="closed2" @click="dakai=!dakai" href="javascript:;">
+                    <img src="./images/closed2.png" alt="">
+                </a>
+            </div>
+        </div>
+
+        <!--立即开启-->
+        <div class="dialog" v-if="open">
+            <div class="dialog_content">
+                <div class="pc">
+                    <div class="left">
+                        <p>{{list[boxIndex].endTime}}</p>
+                    </div>
+                    <div class="right">
+                        <p class="title">{{list[boxIndex].boxName}}</p>
+                        <div class="divjs">
+                            <p>解锁</p>
+                            <div class="caozuo">
+                                <p @click="openAjax(1)">
+                                    <img src="./images/add1.png" alt="" height="12">
+                                    <span>1</span>
+                                    <b>立即开启</b>
+                                </p>
+                                <p @click="openAjax(2)">
+                                    <img src="./images/add2.png" alt="" height="12">
+                                    <span>1</span>
+                                    <b>-10小时</b>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="xinxi">
+                            <img :src="sendMa" alt="">
+                            <div class="tishi2">
+                                <p class="p1">邀请好友进行破解</p>
+                                <p class="p2">每邀请一位好友破解，可使宝箱解锁时间减少1小时</p>
+                                <!--<p class="p3">可使用手机扫二维码转发分享或<a href="javascript:;">复制链接</a>邀请好友帮忙破解</p>-->
+                                <p class="p3">可使用手机扫二维码转发分享或复制链接邀请好友帮忙破解</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <a class="closed2" @click="open=!open" href="javascript:;">
+                    <img src="./images/closed2.png" alt="">
+                </a>
+            </div>
+        </div>
+
+        <!--置换金币-->
+        <zhi-huan :touxiang="touxiang"></zhi-huan>
+
+    </div>
+
+</div>
+
+</body>
+</html>
+<script src="js/jquery-1.10.1.min.js"></script>
+<script src="js/pager.js"></script>
+<script src="js/main.js"></script>
+<script src="js/vue.js"></script>
+<script src="components/headTopNav.js"></script>
+<script src="components/rightNav.js"></script>
+<script src="components/zhiHuan.js"></script>
+<script src="components/page.js"></script>
+<script src="js/polyfill.object-fit.min.js"></script>
+<script>
+    var index=new Vue({
+        el:'.shopIndex',
+        data:{
+            touxiang:api+'/static/images/renxing.png',
+            userInfor:userInfor, //是否登录
+            isFull:false, //是否为全屏
+            isAuth:false,
+            dakai:false,
+            open:false,
+            boxIndex:-1,
+
+            // 转发二维码
+            sendMa:'',
+
+            // 分页
+            page:1,
+            limit:10,
+            list:[],
+            pages:'',
+            skey:'',
+            isBox:'',
+
+            gid:'',
+            gname:''
+        },
+        watch:{
+            open(a){
+                if(a){
+                    var qrsrc=api+'/static/good/mobile/index.html?id='+this.list[this.boxIndex].boxId
+                    this.sendMa=api+'/baba/act/getQrCode?chl='+encodeURIComponent(qrsrc)+'&chs=120x120'
+                }
+            }
+        },
+        mounted(){
+            objectFit.polyfill({
+                selector: 'img',
+                fittype: 'cover'
+            });
+            this.getData(this.skey)
+        },
+        methods:{
+            queren(){
+                this.dakai=!this.dakai
+                this.getData(this.skey)
+            },
+            getData(skey){
+                var that=this;
+                $.ajax({
+                    url:api+'/baba/box/getUserBoxs',
+                    type:'get',
+                    beforeSend:function(){
+                        loading.show()
+                    },
+                    data:{
+                        skey:skey,
+                        page:this.page,
+                        limit:this.limit
+                    },
+                    success:function(res){
+                        loading.hide()
+                        if(res.code == 'LPB0001'){
+                            that.list=res.data.data
+                            that.pages=res.data.pages
+                            that.$nextTick(function(){
+                                tips('.ts')
+                            })
+                            if(res.data.orther){
+                                that.isBox= res.data.orther.boxId
+                            }else{
+                                that.isBox=0
+                            }
+                        }
+                    },
+                    error:function(){
+                        loading.hide()
+                    }
+                })
+            },
+
+            //点击打开
+            clickOpen(index){
+                this.boxIndex=index
+                var that=this;
+                $.ajax({
+                    url:api+'/baba/box/openBox',
+                    type:'get',
+                    beforeSend:function(){
+                        loading.show()
+                    },
+                    data:{
+                        pickId:that.list[that.boxIndex].boxId
+                    },
+                    success:function(res){
+                        loading.hide()
+                        console.log(res)
+                        if(res.data){
+                            that.dakai=true
+                            that.gid=res.data.gid
+                            that.gname=res.data.gname
+                            that.getData(that.skey)
+                        }else{
+                            $.Prompt(res.message)
+                        }
+                    },
+                    error:function(){
+                        loading.hide()
+                    }
+                })
+            },
+            //立即开启
+            openBox(index){
+                this.open=true
+                this.boxIndex=index
+                console.log(this.boxIndex)
+            },
+            openAjax(type){
+
+                if(this.userjin<1 && type==1){
+                    $.Prompt('账户金币不足')
+                    return false
+                }
+                if(this.userjin<1 && type==2){
+                    $.Prompt('账户银币不足')
+                    return false
+                }
+
+                var that=this;
+                $.ajax({
+                    url:api+'/baba/box/openBoxUseMoney',
+                    type:'get',
+                    beforeSend:function(){
+                        loading.show()
+                    },
+                    data:{
+                        pickId:that.list[that.boxIndex].boxId,
+                        silverCount:type==1?0:1, // 金币0  银币1
+                        type:type, // 1金币2银币
+                    },
+                    success:function(res){
+                        loading.hide()
+                        that.user=res.data
+                        that.isAuthShow=res.data.isAdmin
+                        that.getData(that.skey)
+                    },
+                    error:function(){
+                        loading.hide()
+                    }
+                })
+            }
+        }
+    })
+</script>

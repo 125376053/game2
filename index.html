@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>首页</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <link rel="icon" href="images/favicon.ico">
+    <script src="js/limit.js"></script>
+    <link rel="stylesheet" href="css/polyfill.object-fit.min.css">
+    <link rel="stylesheet" href="css/all.css">
+</head>
+<body>
+
+<div class="shopIndex" v-cloak>
+
+    <head-top-nav :goto-page="true" :global-nav="true" :is-box="isBox" :touxiang="touxiang" :is-full="isFull"></head-top-nav>
+
+    <!--查询-->
+    <div class="content_index">
+        <div class="content_infor">
+            <div class="content">
+
+                <!--查询-->
+                <div class="step1" v-if="step==1">
+                    <p class="title">BABA 心服务</p>
+                    <p class="chaxun">输入游戏名查询优惠服务</p>
+                    <div class="yuanjia">
+                        <p class="kuai">0</p>
+                        <p class="infor">为steam原价</p>
+                    </div>
+                    <div class="jifen">
+                        <p class="kuai">0</p>
+                        <p class="infor">为BABA最高积分抵扣</p>
+                    </div>
+                </div>
+
+                <!--提交收录-->
+                <div class="step2" v-if="step==2">
+                    <p class="title">感谢有你</p>
+                    <p class="chaxun">感谢你为大家做出的贡献</p>
+                </div>
+
+                <!--未搜索到-->
+                <div class="step3" v-if="step==3">
+                    <p class="title">还行，竟然没搜着</p>
+                    <p class="chaxun">请提供这款游戏的steam链接，以加快<br>收录便于尽早为大家争取福利吧。</p>
+                    <p class="linkurl">
+                        <input type="text" v-model="linkUrl" placeholder="steam链接地址">
+                        <a href="javascript:;" @click="sendShouLu">提交</a>
+                    </p>
+                </div>
+
+                <div class="search">
+                    <input type="text" placeholder="游戏名" v-model="skey" @keyup.13="searchList">
+                    <a href="javascript:;" @click="searchList">
+                        <img src="./images/headerSearch.png" alt="">
+                    </a>
+                </div>
+
+            </div>
+            <a class="goShop" href="./list.html">随便逛逛>></a>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
+<script src="js/jquery-1.10.1.min.js"></script>
+<script src="js/main.js"></script>
+<script src="js/vue.js"></script>
+<script src="components/headTopNav.js"></script>
+<script src="js/polyfill.object-fit.min.js"></script>
+<script>
+    var index=new Vue({
+        el:'.shopIndex',
+        data:{
+            api:api,
+            touxiang:api+'/static/images/renxing.png',
+            userInfor:userInfor, //是否登录
+            step:1, //step 显示搜索情况 1搜索 2找到 3找不到
+            page:1,
+            limit:10,
+            skey:'',
+            list:[],
+            linkUrl:'',
+            isBox:0,
+            isFull:true
+        },
+        mounted(){
+            objectFit.polyfill({
+                selector: 'img',
+                fittype: 'cover'
+            });
+        },
+        methods:{
+            toToList(){
+                window.location.href="list.html?skey="+this.skey
+            },
+            searchList(){
+                var that=this;
+                $.ajax({
+                    url:api+'/baba/goods/getGoodsList',
+                    type:'get',
+                    beforeSend:function(){
+                        loading.show()
+                    },
+                    data:{
+                        skey:this.skey,
+                        page:this.page,
+                        limit:this.limit
+                    },
+                    success:function(res){
+                        if(res.code=='LPB0001'){
+                            that.list=res.data.data
+                            if(res.data.data.length==0){
+                                that.step=3
+                            }else{
+                                window.location.href="list.html?skey="+that.skey
+                            }
+                        }
+                        loading.hide()
+                    },
+                    error:function(){
+                        loading.hide()
+                    }
+                })
+            },
+            sendShouLu(){
+                if(this.linkUrl===''){
+                    $.Prompt('请输入链接')
+                    return false
+                }
+                var that=this;
+                $.ajax({
+                    url:api+'/baba/goods/saveSteamUrl',
+                    type:'get',
+                    beforeSend:function(){
+                        loading.show()
+                    },
+                    data:{
+                        steamUrl:this.linkUrl
+                    },
+                    success:function(res){
+                        if(res.code=='LPB0001'){
+                            that.step=2
+                        }
+                        loading.hide()
+                    },
+                    error:function(){
+                        loading.hide()
+                    }
+                })
+            }
+        }
+
+    })
+</script>

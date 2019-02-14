@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>游戏管理</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <link rel="icon" href="images/favicon.ico">
+    <script src="js/limit.js"></script>
+    <link rel="stylesheet" href="css/pager.css">
+    <link rel="stylesheet" href="css/polyfill.object-fit.min.css">
+    <link rel="stylesheet" href="css/all.css">
+</head>
+<body>
+
+<div class="shopIndex" v-cloak>
+
+    <!--用户-->
+    <div class="user_index">
+
+        <head-top-nav :is-box="isBox" :touxiang="touxiang" :is-full="isFull"></head-top-nav>
+
+        <page :pages="pages" :is-full="isFull"></page>
+
+        <div class="left_user" :style="{right:isFull?'20px':'300px'}">
+            <div class="user_header">
+                <div class="float_right" style="margin-left: 20px;">
+                    <a href="javascript:;" class="chongzhiBtn" @click="changeImg">添加/修改封面</a>
+                </div>
+                <div class="float_right">
+                    <a href="javascript:;" class="chongzhiBtn" @click="upDownJia">上/下架</a>
+                </div>
+                <div class="float_right" style="margin-right: 20px;">
+                    <a href="javascript:;" class="chongzhiBtn" @click="reloadGame">刷新商品信息</a>
+                </div>
+            </div>
+            <div class="user_content">
+                <table v-if="list.length>0">
+                    <tr
+                            :class="{setr:curIndex===index,setr2:curIndex2===index}"
+                            v-for="(item,index) in list"
+                            @click="curIndex=index"
+                            @mouseover="curIndex2=index"
+                            @mouseout="curIndex2=-1"
+                    >
+                        <td width="108" class="bg">
+                            {{item.goodName}}
+                            <b v-if="curIndex===index">名称</b>
+                        </td>
+                        <td width="88">
+                            {{item.packageUrl==='https://www.babagame.vip/static/images/renxing.png'?'-':item.packageUrl}}
+                            <b v-if="curIndex===index">封面</b>
+                        </td>
+                        <td width="">
+                            <div class="flex_jinyi">
+                                <p>
+                                    <img src="./images/add1.png" alt="">
+                                    <span>{{item.goldPrice}}</span>
+                                </p>
+                                <p>
+                                    <img src="./images/add2.png" alt="">
+                                    <span>{{item.silverPrice}}</span>
+                                </p>
+                            </div>
+                            <b v-if="curIndex===index">售价/最高抵扣</b>
+                        </td>
+                        <td>
+                            {{item.goodId}}
+                            <b v-if="curIndex===index">编号</b>
+                        </td>
+                        <td>
+                            {{item.goodStatus==1?'上架':'下架'}}
+                            <b v-if="curIndex===index">状态</b>
+                        </td>
+                    </tr>
+                </table>
+                <div v-else style=" text-align: center; line-height: 500px; font-size: 20px;">
+                    暂无数据
+                </div>
+            </div>
+        </div>
+
+        <div class="updown" @click="isFull=!isFull" :style="{right:isFull?'0px':'280px'}">
+            <img :src="isFull?'./images/left_user2.png':'./images/left_user.png'" alt="">
+        </div>
+
+        <!--传递值得时候注意 驼峰命名要写成中间是“-”分割的-->
+        <center-right-nav :is-auth="isAuth" :touxiang="touxiang" :is-full="isFull"></center-right-nav>
+
+    </div>
+
+    <!--置换金币-->
+    <zhi-huan :touxiang="touxiang"></zhi-huan>
+
+    <!--上传图片地址-->
+    <div class="dialog" v-if="imgDialog">
+        <div class="dialog_content imgDialog">
+            <div class="padding10">
+                <p class="title">请输入图片地址</p>
+                <p class="linkurl">
+                    <input type="text" v-model="linkUrl" placeholder="http://">
+                    <a href="javascript:;" @click="changeImgFn">确定</a>
+                </p>
+                <a class="closed2" @click="imgDialog=!imgDialog" href="javascript:;">
+                    <img src="./images/closed2.png" alt="">
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
+<script src="js/jquery-1.10.1.min.js"></script>
+<script src="js/pager.js"></script>
+<script src="js/main.js"></script>
+<script src="js/vue.js"></script>
+<script src="components/headTopNav.js"></script>
+<script src="components/rightNav.js"></script>
+<script src="components/zhiHuan.js"></script>
+<script src="components/page.js"></script>
+<script src="js/polyfill.object-fit.min.js"></script>
+<script>
+    var index = new Vue({
+        el: '.shopIndex',
+        data: {
+            touxiang: api+'/static/images/renxing.png',
+            userInfor: userInfor, //是否登录
+            isFull: false, //是否是管理员 后台给
+            curIndex: -1,
+            curIndex2:-1,
+            isAuth:true, //是否有管理员权限开关 自己定义
+            // 分页
+            page: 1,
+            limit:10,
+            list: [],
+            pages: '',
+            skey:'',
+            imgDialog:false,
+            linkUrl:'',
+            isBox:'' // 点击领取宝箱必须的参数 从getData中拿
+        },
+        mounted(){
+            objectFit.polyfill({
+                selector: 'img',
+                fittype: 'cover'
+            });
+            this.getData(this.skey)
+        },
+        methods: {
+            // 刷新商品信息
+            reloadGame(){
+                var that = this;
+                $.ajax({
+                    url: api + '/baba/goods/refreshGoods',
+                    type: 'get',
+                    beforeSend: function () {
+                        loading.show()
+                    },
+                    success: function (res) {
+                        loading.hide()
+                        if (res.code == 'LPB0001') {
+                            console.log(res);
+                            $.Prompt('商品已更新')
+                        }
+                    },
+                    error: function () {
+                        loading.hide()
+                    }
+                })
+            },
+            // 游戏列表
+            getData(skey){
+                var that = this;
+                $.ajax({
+                    url: api + '/baba/goods/getAdminGoodsList',
+                    type: 'get',
+                    beforeSend: function () {
+                        loading.show()
+                    },
+                    data: {
+                        skey: skey,
+                        page: this.page,
+                        limit: this.limit
+                    },
+                    success: function (res) {
+                        loading.hide()
+                        if (res.code == 'LPB0001') {
+                            that.list = res.data.data
+                            that.pages = res.data.pages
+                            if(res.data.orther){
+                                that.isBox= res.data.orther.boxId
+                            }else{
+                                that.isBox=0
+                            }
+                            console.log(res);
+                        }
+                    },
+                    error: function () {
+                        loading.hide()
+                    }
+                })
+            },
+
+            // 上下架
+            upDownJia(){
+                if(this.curIndex==-1){
+                    $.Prompt('请选择上下架的列表')
+                    return false
+                }
+                var that = this;
+                $.ajax({
+                    url: api + '/baba/goods/setGoodStatus',
+                    type: 'get',
+                    beforeSend: function () {
+                        loading.show()
+                    },
+                    data: {
+                        goodId: that.list[that.curIndex].goodId,
+                        status: that.list[that.curIndex].goodStatus==1?2:1
+                    },
+                    success: function (res) {
+                        loading.hide()
+                        if (res.code == 'LPB0001') {
+                            console.log(res);
+                            that.getData(that.skey)
+                        }
+                    },
+                    error: function () {
+                        loading.hide()
+                    }
+                })
+            },
+            // 修改封面弹出
+            changeImg(){
+                if(this.curIndex==-1){
+                    $.Prompt('请选择列表进行封面修改')
+                    return false
+                }
+                this.imgDialog=true
+            },
+            // 修改封面
+            changeImgFn(){
+                if(this.linkUrl===''){
+                    $.Prompt('请输入链接')
+                    return false
+                }
+                var that = this;
+                $.ajax({
+                    url: api + '/baba/goods/setGoodPackageUrl',
+                    type: 'get',
+                    beforeSend: function () {
+                        loading.show()
+                    },
+                    data: {
+                        goodId: that.list[that.curIndex].goodId,
+                        img: that.linkUrl
+                    },
+                    success: function (res) {
+                        loading.hide()
+                        if (res.code == 'LPB0001') {
+                            console.log(res);
+                            that.getData(that.skey)
+                        }
+                    },
+                    error: function () {
+                        loading.hide()
+                    }
+                })
+            },
+        }
+    })
+</script>

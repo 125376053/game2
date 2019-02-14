@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+    <meta content="yes" name="apple-mobile-web-app-capable">
+    <meta content="black" name="apple-mobile-web-app-status-bar-style">
+    <meta content="telephone=no" name="format-detection">
+    <title>BABA</title>
+    <script>
+        (function(win,doc){
+            function change(){
+                doc.documentElement.style.fontSize=doc.documentElement.clientWidth/375*100+'px';
+            }
+            change();
+            win.addEventListener('resize',change,false);
+        })(window,document);
+    </script>
+    <link rel="stylesheet" type="text/css" href="css/all.css">
+</head>
+<body>
+    <div class="page" v-cloak>
+        <div class="content">
+            <img class="logo" src="./images/logo.jpg" alt="">
+            <div class="form">
+                <p>
+                    <input type="text" v-model="phone" placeholder="手机">
+                </p>
+                <p>
+                    <input type="text" v-model="ma" placeholder="验证码">
+                    <span class="getYan_zhuce" @click="getYan">获取</span>
+                </p>
+                <a href="javascript:;" @click="register" class="a1 registerBtn">注册</a>
+                <a href="./login.html" class="a2 loginBtn">登录</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+<script src="js/jquery-1.10.1.min.js"></script>
+<script src="js/main.js"></script>
+<script src="js/vue.js"></script>
+<script>
+    var index=new Vue({
+        el:'.page',
+        data:{
+            userInfor:userInfor, //是否登录
+            // password: '',
+            phone: getCookie('shoujihao') || '',
+            ma:'',
+        },
+        mounted(){
+            if(getCookie('captcha')!=''){
+                daojishi()
+            }
+        },
+        methods:{
+            register(){
+                var telMoshi = /^1[23456789]\d{9}$/; //手机号验证
+                var passMoshi = /^[0-9a-zA-Z]{6,20}$/g; //密码验证
+                if(this.phone=="" && !telMoshi.test(this.phone)){
+                    $.Prompt('请输入正确的手机号码');
+                    return false;
+                }else if (!passMoshi.test(this.password)) {
+                    $.Prompt('密码由6-12位数字，大小写字母组成');
+                    return false;
+                }else if(this.ma==""){
+                    $.Prompt('请输入验证码');
+                }else{
+                    this.registerFn()
+                }
+            },
+            registerFn(){
+                var that=this;
+                var obj={
+                    nickName:this.phone,
+                    pwd:this.phone,
+                    code:this.ma,
+                    phone:this.phone
+                }
+                $.ajax({
+                    url:api+'/baba/act/registUser',
+                    type:'post',
+                    beforeSend:function(){
+                        loading.show()
+                    },
+                    contentType : "application/json",
+                    dataType : "json",
+                    data:JSON.stringify(obj),
+                    success:function(res){
+                        loading.hide()
+                        console.log(res)
+                        if(res.code == 'LPB0001'){
+                            $.Prompt('注册成功');
+                            window.location.href='login.html'
+                        }else{
+                            $.Prompt(res.message);
+                        }
+                    },
+                    error:function(){
+                        loading.hide()
+                    }
+                })
+            },
+            getYan(){
+                setCookie('shoujihao', this.phone || '', 7);//设置手机号cookie 7天
+                var telMoshi = /^1[34578]\d{9}$/; //手机号验证
+                if (this.phone ==='' && !telMoshi.test(this.phone)) {
+                    $.Prompt('请输入正确的手机号码');
+                    return false;
+                }else {
+                    this.checkMa()
+                }
+            },
+            checkMa(){
+                var that=this;
+                $.ajax({
+                    url:api+'/baba/act/sendSms',
+                    type:'get',
+                    beforeSend:function(){
+                        loading.show()
+                    },
+                    data:{
+                        phone:that.phone
+                    },
+                    success:function(res){
+                        loading.hide()
+                        console.log(res)
+                        if(res.code == 'LPB0001'){
+                            $.Prompt('验证码发送成功');
+                            daojishi()
+                        }else{
+                            $.Prompt(res.message);
+                        }
+                    },
+                    error:function(){
+                        loading.hide()
+                    }
+                })
+            }
+        }
+    })
+</script>
